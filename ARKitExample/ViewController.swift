@@ -11,12 +11,16 @@ import SceneKit
 import UIKit
 import Photos
 
+func setTimeout(_ delay:TimeInterval, block:@escaping ()->Void) -> Timer {
+    return Timer.scheduledTimer(timeInterval: delay, target: BlockOperation(block: block), selector: #selector(Operation.main), userInfo: nil, repeats: false)
+}
+
 class ViewController: UIViewController, ARSCNViewDelegate, UIPopoverPresentationControllerDelegate, VirtualObjectSelectionViewControllerDelegate {
 	
     // MARK: - Main Setup & View Controller methods
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         Setting.registerDefaults()
         setupScene()
         setupDebug()
@@ -753,27 +757,62 @@ class ViewController: UIViewController, ARSCNViewDelegate, UIPopoverPresentation
 			})
 		}
 	}
-	
+    
 	@IBOutlet weak var screenshotButton: UIButton!
 	
 	@IBAction func takeScreenshot() {
 		guard screenshotButton.isEnabled else {
 			return
 		}
-		
+        
+        
+        
 		let takeScreenshotBlock = {
-			UIImageWriteToSavedPhotosAlbum(self.sceneView.snapshot(), nil, nil, nil)
-			DispatchQueue.main.async {
-				// Briefly flash the screen.
-				let flashOverlay = UIView(frame: self.sceneView.frame)
-				flashOverlay.backgroundColor = UIColor.white
-				self.sceneView.addSubview(flashOverlay)
-				UIView.animate(withDuration: 0.25, animations: {
-					flashOverlay.alpha = 0.0
-				}, completion: { _ in
-					flashOverlay.removeFromSuperview()
-				})
-			}
+			//UIImageWriteToSavedPhotosAlbum(self.sceneView.snapshot(), nil, nil, nil)
+            
+            let glimpse = Glimpse()
+            glimpse.startRecording(self.sceneView, onCompletion: { url in
+                print(url)
+                
+                PHPhotoLibrary.shared().performChanges({
+                    PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url!)
+                }) { saved, error in
+                    if saved {
+                        let alertController = UIAlertController(title: "Your video was successfully saved", message: nil, preferredStyle: .alert)
+                        let defaultAction = UIAlertAction(title: "OK", style: .default, handler: nil)
+                        alertController.addAction(defaultAction)
+                        self.present(alertController, animated: true, completion: nil)
+                    }
+                }
+                
+                DispatchQueue.main.async {
+                    // Briefly flash the screen.
+                    let flashOverlay = UIView(frame: self.sceneView.frame)
+                    flashOverlay.backgroundColor = UIColor.white
+                    self.sceneView.addSubview(flashOverlay)
+                    UIView.animate(withDuration: 0.25, animations: {
+                        flashOverlay.alpha = 0.0
+                    }, completion: { _ in
+                        flashOverlay.removeFromSuperview()
+                    })
+                }
+            })
+            let time = setTimeout(5.0, block: { () -> Void in
+                glimpse.stop()
+            })
+            
+            
+//            DispatchQueue.main.async {
+//                // Briefly flash the screen.
+//                let flashOverlay = UIView(frame: self.sceneView.frame)
+//                flashOverlay.backgroundColor = UIColor.white
+//                self.sceneView.addSubview(flashOverlay)
+//                UIView.animate(withDuration: 0.25, animations: {
+//                    flashOverlay.alpha = 0.0
+//                }, completion: { _ in
+//                    flashOverlay.removeFromSuperview()
+//                })
+//            }
 		}
 		
 		switch PHPhotoLibrary.authorizationStatus() {
