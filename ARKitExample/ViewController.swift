@@ -771,12 +771,14 @@ class ViewController: UIViewController, ARSCNViewDelegate, UIPopoverPresentation
 			//UIImageWriteToSavedPhotosAlbum(self.sceneView.snapshot(), nil, nil, nil)
             
             let glimpse = Glimpse()
+            print(NSDate(), "start")
             glimpse.startRecording(self.sceneView, onCompletion: { url in
+                print(NSDate(), "save")
                 print(url)
-                
                 PHPhotoLibrary.shared().performChanges({
                     PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url!)
                 }) { saved, error in
+                    print(NSDate(), "saved")
                     if saved {
                         let alertController = UIAlertController(title: "Your video was successfully saved", message: nil, preferredStyle: .alert)
                         let defaultAction = UIAlertAction(title: "OK", style: .default, handler: nil)
@@ -797,7 +799,8 @@ class ViewController: UIViewController, ARSCNViewDelegate, UIPopoverPresentation
                     })
                 }
             })
-            let time = setTimeout(5.0, block: { () -> Void in
+            let time = setTimeout(15.0, block: { () -> Void in
+                print(NSDate(), "stop")
                 glimpse.stop()
             })
             

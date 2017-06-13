@@ -171,7 +171,7 @@ static NSString *const GlimpseAssetWriterQueueName = @"com.Glimpse.asset.writer.
                 NSLog(@"Input error");
                 i--;
             }
-            
+            self.frameBuffer[idx] = [UIImage new];
             [NSThread sleepForTimeInterval:sleepOffset];
         }];
 
